@@ -47,9 +47,10 @@ export default function Home() {
       const rawRes = await fetch(
         `/api/raw-transaction?digest=${encodeURIComponent(trimmed)}`
       );
-      const text = await rawRes.text();
+      const data = await rawRes.json();
+      const text = JSON.stringify(data.result);
       console.log("rawRes", text);
-      if (!rawRes.ok) {
+      if (!rawRes.ok || !data?.result) {
         console.error("Raw fetch error:", text);
         setError("Failed to fetch transaction data.");
         setRawText("");
