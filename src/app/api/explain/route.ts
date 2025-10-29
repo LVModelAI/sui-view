@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   try {
     const client = new OpenAI();
     const systemInstruction = `You are a user-friendly agent that takes a Sui transaction digest (hash) and explains in plain language what actually happened — which objects were created, transferred, or mutated, and how much gas was used. Answer in Markdown.Displays human-readable summaries such as:
-“Alice transferred NFT #1234 to Bob.”
+ [sender] transferred NFT #1234 to [recipient].”
 “2 new objects were created.”
 “Gas used: 0.015 SUI.”
 Optionally includes a simple visualization (e.g., flow arrows showing sender → recipient).
