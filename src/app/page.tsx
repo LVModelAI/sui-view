@@ -19,9 +19,19 @@ export default function Home() {
     return /^[A-Za-z0-9]{40,50}$/.test(trimmed);
   }
 
+  function normalizeDigestInput(value: string) {
+    const input = value.trim();
+    if (!input.includes("/")) return input;
+    const lastSegment = input.split("/").pop() || input;
+    const noQuery = lastSegment.split("?")[0];
+    const noHash = noQuery.split("#")[0];
+    console.log("noHash", noHash);
+    return noHash.trim();
+  }
+
   async function handleTranslate(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    const trimmed = digest.trim();
+    const trimmed = normalizeDigestInput(digest);
     if (!isValidDigest(trimmed)) {
       setError("Enter a valid digest (40-50 characters, letters and numbers).");
       return;
@@ -50,7 +60,7 @@ export default function Home() {
       setTranslateStage("summarizing");
       // 2) Send to model for explanation (streaming)
       setExplanation("");
-      const explainRes = await fetch(`/api/explain?stream=1`, {
+      const explainRes = await fetch(`/api/explain`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ digest: trimmed, rawText: text }),
@@ -132,7 +142,7 @@ export default function Home() {
                   setDigest(e.target.value);
                   if (error) setError("");
                 }}
-                placeholder="FwyPscH5jpGLWq2VvwppuST14KQEwNszXhwMrNL72M2V"
+                placeholder="Enter a transaction digest or transaction URL"
                 className="w-full rounded-2xl border border-black/10 bg-white/80 py-4 px-4 text-[15px] text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-emerald-500 focus:bg-white focus:shadow-md dark:border-white/15 dark:bg-zinc-800/70 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:text-zinc-900"
                 autoComplete="off"
                 spellCheck={false}

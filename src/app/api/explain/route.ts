@@ -37,12 +37,12 @@ export async function POST(req: NextRequest) {
 “Gas used: 0.015 SUI.”
 Optionally includes a simple visualization (e.g., flow arrows showing sender → recipient).
 Provides clear labels for Move calls and involved packages.
- First give a one line human readable summary of what happened. then provide a detailed explanation of what happened.`;
+ First give a one line human readable but detailed summary of what happened along with the number of tokens involved . then provide a detailed explanation of what happened.`;
 
     const instructionsWithContext = `${systemInstruction}\n\nReference knowledge base (use for accurate interpretation; do not quote verbatim):\n${SuiContext}`;
 
     const response = await client.responses.create({
-      model: "gpt-5",
+      model: "gpt-4o",
       instructions: instructionsWithContext,
       input: [
         {
