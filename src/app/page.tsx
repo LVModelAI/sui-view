@@ -2,19 +2,13 @@
 
 import { useState } from "react";
 import { Markdown } from "@/components/markdown";
-import {
-  SuiGasData,
-  SuiGasUsedFormattedData,
-  SuiTransactionResponse,
-  SuiTransactionResult,
-} from "@/lib/types";
-import {
-  annotateTxnBlocks,
-  enrichGasUsage,
-  extractAllCoinTypes,
-} from "@/lib/utils";
+import { SuiTransactionResponse } from "@/lib/types";
+import { annotateTxnBlocks, extractAllCoinTypes } from "@/lib/utils";
 import { getTxBlock } from "@/lib/sui/getTxBlock";
 import { getCoinMetadata } from "@/lib/sui/getCoinMetadata";
+import { CoinMetadata } from "@mysten/sui/client";
+import { TxnMetadataMap, TxnMetadataItem } from "@/lib/types";
+import { SuiTransactionBlockResponse } from "@mysten/sui/client";
 
 export default function Home() {
   const [digest, setDigest] = useState("");
@@ -42,6 +36,10 @@ export default function Home() {
     return noHash.trim();
   }
 
+  function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   async function handleTranslate(e?: React.FormEvent) {
     if (e) e.preventDefault();
     const trimmed = normalizeDigestInput(digest);
@@ -56,37 +54,69 @@ export default function Home() {
     setLoadingTranslate(true);
     setTranslateStage("fetching");
     try {
-      const txBlock = await getTxBlock(trimmed);
-      console.log("txBlock", txBlock);
-      const coinTypes = extractAllCoinTypes(txBlock);
+      // const txBlock = await getTxBlock(trimmed);
+      // console.log("txBlock", txBlock);
+      await sleep(100);
+      const rawRes = await fetch(
+        `/api/raw-transaction?digest=${encodeURIComponent(trimmed)}`
+      );
+      const data: SuiTransactionResponse = await rawRes.json();
+      // console.log("data", data);
+      const txBlock = data.result;
+      // console.log("txBlock", txBlock);
+      const coinTypes = extractAllCoinTypes(
+        txBlock as unknown as SuiTransactionBlockResponse
+      );
       // console.log("coinTypes", coinTypes);
-      const coinsFromBalance = coinTypes.fromBalanceChanges;
+      // const coinsFromBalance = coinTypes.fromBalanceChanges;
       // console.log("coinsFromBalance", coinsFromBalance);
       const coinsFromEvents = coinTypes.fromEvents;
-      console.log("coinsFromEvents", coinsFromEvents);
-      const coinMetadata = await Promise.all(
-        coinsFromBalance.map(async (coinType: string) => {
-          const coin = await getCoinMetadata(coinType);
-          return {
-            ...coin,
-            coinType: coinType,
-          };
-        })
-      );
+      // console.log("coinsFromEvents", coinsFromEvents);
+      const coins = [];
+      for (const coinType of coinsFromEvents) {
+        await sleep(200); // Wait 200ms before next fetch
+        let coinTypeToFetch = coinType.includes("::sui::SUI")
+          ? "0x2::sui::SUI"
+          : coinType;
+        const coinRes = await fetch(
+          `/api/get-coin-metadata?coinType=${encodeURIComponent(
+            coinTypeToFetch
+          )}`
+        );
+        const coin: CoinMetadata = await coinRes.json();
+        // console.log("coin", coin);
+        coins.push({
+          ...coin,
+          coinType,
+        });
+      }
+      // Use 'coins' array
 
       // add coinsFromBalance to coinMetadata
 
-      console.log("coinMetadata", coinMetadata);
+      // console.log("coinMetadata", coins);
 
-      const annotatedTxn = annotateTxnBlocks(txBlock, coinMetadata);
-      console.log("annotatedTxn", annotatedTxn);
+      const annotatedTxn = annotateTxnBlocks(txBlock, coins);
+      // console.log("annotatedTxn", annotatedTxn);
 
-      const enrichedText = JSON.stringify(annotatedTxn, null, 2);
+      // Build txn metadata map (coins only for now)
+      const txnMetadataRes = await fetch(
+        `/api/get-txn-metadata?digest=${encodeURIComponent(trimmed)}`
+      );
+      const txnMetadataData: SuiTransactionResponse =
+        await txnMetadataRes.json();
+      // console.log("txnMetadataData", txnMetadataData);
+
+      const annotatedWithMeta = { ...annotatedTxn, txnMetadataData };
+      console.log("annotatedWithMeta", annotatedWithMeta);
+      const enrichedText = JSON.stringify(annotatedWithMeta, null, 2);
+
       // Update UI
       setRawText(enrichedText);
       setTranslateStage("summarizing");
       // 2) Send to model for explanation (streaming)
       setExplanation("");
+      await sleep(100);
       const explainRes = await fetch(`/api/explain`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -125,7 +155,7 @@ export default function Home() {
 
       const decoder = new TextDecoder();
       while (true) {
-        const { done, value } = await reader.read();
+        const { done, value } = await reader!.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         if (chunk) setExplanation((prev) => prev + chunk);
@@ -149,7 +179,7 @@ export default function Home() {
         <div className="w-full rounded-3xl border border-black/5 bg-white/70 p-8 shadow-[0_10px_50px_-15px_rgba(0,0,0,0.1)] backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/60">
           <div className="mb-8 text-center">
             <h1 className="mt-2 text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl">
-              Sui Transaction Translator
+              Sui View
             </h1>
             <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-zinc-600 dark:text-zinc-400">
               Paste a transaction digest to preview what happened. No wallet

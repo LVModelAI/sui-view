@@ -1,16 +1,15 @@
-import { suiClient } from "@/lib/sui-client";
-
 export async function getTxBlock(digest: string) {
-  return suiClient.getTransactionBlock({
-    digest,
-    options: {
-      showInput: true,
-      showRawInput: false,
-      showEffects: true,
-      showEvents: true,
-      showObjectChanges: true,
-      showBalanceChanges: true,
-      showRawEffects: false,
-    },
-  });
+  const res = await fetch(
+    `/api/sui/get-tx-block?digest=${encodeURIComponent(digest)}`,
+    {
+      method: "GET",
+      headers: { "content-type": "application/json" },
+      cache: "no-store",
+    }
+  );
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`getTxBlock failed: ${res.status} ${err}`);
+  }
+  return await res.json();
 }

@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const digest = searchParams.get("digest");
+  const coinType = searchParams.get("coinType");
+
   const blockberryBase = process.env.BLOCKBERRY_BASE_URL;
   if (!blockberryBase) {
     return new Response(
@@ -10,9 +11,9 @@ export async function GET(req: NextRequest) {
       { status: 500, headers: { "content-type": "application/json" } }
     );
   }
-  if (!digest) {
+  if (!coinType) {
     return new Response(
-      JSON.stringify({ error: "Missing required query parameter: digest" }),
+      JSON.stringify({ error: "Missing required query parameter: coinType" }),
       { status: 400, headers: { "content-type": "application/json" } }
     );
   }
@@ -26,8 +27,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const url = `${blockberryBase}/raw-transactions/${encodeURIComponent(
-      digest
+    const url = `${blockberryBase}/coins/metadata/${encodeURIComponent(
+      coinType
     )}`;
     console.log("url", url);
     const upstream = await fetch(url, {
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     return new Response(
       JSON.stringify({
-        error: "Failed to fetch raw transaction",
+        error: "Failed to fetch coin metadata",
         details: String(err),
       }),
       { status: 502, headers: { "content-type": "application/json" } }

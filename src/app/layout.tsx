@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sui Txn Translator",
-  description: "Paste a Sui transaction digest and get a clear explanation.",
+  title: "SuiView",
+  description:
+    "Paste a any Sui transaction hash and get a clear human readable explanation of the transaction.",
 };
 
 export default function RootLayout({
