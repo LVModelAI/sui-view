@@ -1,10 +1,11 @@
+import { BLOCKBERRY_BASE_URL } from "@/lib/constants";
 import { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const coinType = searchParams.get("coinType");
 
-  const blockberryBase = process.env.BLOCKBERRY_BASE_URL;
+  const blockberryBase = BLOCKBERRY_BASE_URL;
   if (!blockberryBase) {
     return new Response(
       JSON.stringify({ error: "Server missing BLOCKBERRY_BASE_URL" }),

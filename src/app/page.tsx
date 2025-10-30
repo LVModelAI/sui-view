@@ -32,7 +32,6 @@ export default function Home() {
     const lastSegment = input.split("/").pop() || input;
     const noQuery = lastSegment.split("?")[0];
     const noHash = noQuery.split("#")[0];
-    console.log("noHash", noHash);
     return noHash.trim();
   }
 
@@ -48,34 +47,26 @@ export default function Home() {
       return;
     }
     handleReset();
-    console.log("translating", trimmed);
 
     setError("");
     setLoadingTranslate(true);
     setTranslateStage("fetching");
     try {
-      // const txBlock = await getTxBlock(trimmed);
-      // console.log("txBlock", txBlock);
-      await sleep(100);
+      console.log("fetching raw transaction...");
       const rawRes = await fetch(
         `/api/raw-transaction?digest=${encodeURIComponent(trimmed)}`
       );
       const data: SuiTransactionResponse = await rawRes.json();
-      console.log("data", data);
       const txBlock = data.result;
-      console.log("txBlock", txBlock);
+      console.log("fetched raw transaction");
       const coinTypes = extractAllCoinTypes(
         txBlock as unknown as SuiTransactionBlockResponse
       );
-      console.log("coinTypes", coinTypes);
-      const coinsFromBalance = coinTypes.fromBalanceChanges;
-      const coinsFromEvents = coinTypes.fromEvents;
 
-      const mergedCoins = [...coinsFromEvents, ...coinsFromBalance];
-      console.log("mergedCoins", mergedCoins);
       const coins = [];
-      for (const coinType of mergedCoins) {
+      for (const coinType of coinTypes) {
         await sleep(200); // Wait 200ms before next fetch
+        console.log("fetching coin metadata for ---", coinType);
         let coinTypeToFetch = coinType.includes("::sui::SUI")
           ? "0x2::sui::SUI"
           : coinType;
@@ -85,40 +76,30 @@ export default function Home() {
           )}`
         );
         const coin: CoinMetadata = await coinRes.json();
-        console.log("coin", coin);
         coins.push({
           ...coin,
           coinType,
         });
       }
-      // Use 'coins' array
-
-      // add coinsFromBalance to coinMetadata
-
-      console.log("coinMetadata", coins);
 
       const annotatedTxn = annotateTxnBlocks(txBlock, coins);
-      console.log("annotatedTxn", annotatedTxn);
 
-      // Build txn metadata map (coins only for now)
+      console.log("fetching txn metadata...");
       const txnMetadataRes = await fetch(
         `/api/get-txn-metadata?digest=${encodeURIComponent(trimmed)}`
       );
       const txnMetadataData: SuiTransactionResponse =
         await txnMetadataRes.json();
-      console.log("txnMetadataData", txnMetadataData);
+      console.log("fetched txn metadata");
 
       const annotatedWithMeta = { ...annotatedTxn, txnMetadataData };
-      console.log("annotatedWithMeta", annotatedWithMeta);
       const enrichedText = JSON.stringify(annotatedWithMeta, null, 2);
-
-      return;
+      // return;
       // Update UI
       setRawText(enrichedText);
       setTranslateStage("summarizing");
       // 2) Send to model for explanation (streaming)
       setExplanation("");
-      await sleep(100);
       const explainRes = await fetch(`/api/explain`, {
         method: "POST",
         headers: { "content-type": "application/json" },

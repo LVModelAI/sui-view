@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { BLOCKBERRY_BASE_URL } from "@/lib/constants";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const blockberryBase = process.env.BLOCKBERRY_BASE_URL;
+  const blockberryBase = BLOCKBERRY_BASE_URL;
   const apiKey = process.env.BLOCKBERRY_API_KEY;
   if (!blockberryBase || !apiKey) {
     return new Response(

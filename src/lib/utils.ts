@@ -82,70 +82,22 @@ function extractCoinTypesFromEvents(events: any[] = []): Set<string> {
   return coinTypes;
 }
 
-export function extractAllCoinTypes(txn: SuiTransactionBlockResponse): {
-  fromEvents: string[];
-  fromBalanceChanges: string[];
-  // fromObjectChanges: string[];
-  // fromMoveCalls: string[];
-} {
-  if (
-    !txn.events ||
-    !txn.balanceChanges ||
-    !txn.objectChanges ||
-    !txn.transaction
-  ) {
-    return {
-      fromEvents: [],
-      fromBalanceChanges: [],
-      // fromObjectChanges: [],
-      // fromMoveCalls: [],
-    };
-  }
+export function extractAllCoinTypes(
+  txn: SuiTransactionBlockResponse
+): string[] {
+  if (!txn?.events || !txn?.balanceChanges) return [];
 
-  // 1️⃣ From events (recursively)
-  const fromEvents = new Set<string>();
-  extractCoinTypesFromEvents(txn.events).forEach((t) => fromEvents.add(t));
+  const allCoinTypes = new Set<string>();
 
-  // 2️⃣ From balanceChanges
-  const fromBalanceChanges = new Set<string>();
-  txn.balanceChanges?.forEach((bc) => {
-    if (bc.coinType) fromBalanceChanges.add(ensure0xCoinType(bc.coinType));
+  // From events (recursively)
+  extractCoinTypesFromEvents(txn.events).forEach((t) => allCoinTypes.add(t));
+
+  // From balanceChanges
+  txn.balanceChanges.forEach((bc) => {
+    if (bc.coinType) allCoinTypes.add(ensure0xCoinType(bc.coinType));
   });
 
-  // // 3️⃣ From objectChanges
-  // const fromObjectChanges = new Set<string>();
-  // txn.objectChanges?.forEach((oc: SuiObjectChange) => {
-  //   if (!oc.type || oc.type === "published" || !oc.objectType) return;
-  //   const match = oc.objectType?.match(/Coin<([^>]+)>/);
-  //   if (match) fromObjectChanges.add(ensure0xCoinType(match[1]));
-  // });
-
-  // // 4️⃣ From MoveCalls (type_arguments)
-  // const fromMoveCalls = new Set<string>();
-  // // @ts-ignore
-  // if (!txn.transaction?.data?.transaction?.transactions) {
-  //   return {
-  //     fromEvents: Array.from(fromEvents),
-  //     fromBalanceChanges: Array.from(fromBalanceChanges),
-  //     fromObjectChanges: Array.from(fromObjectChanges),
-  //     fromMoveCalls: [],
-  //   };
-  // }
-  // // @ts-ignore
-  // txn.transaction?.data?.transaction?.transactions?.forEach((op: any) => {
-  //   if (op.MoveCall?.type_arguments) {
-  //     op.MoveCall.type_arguments.forEach((t: string) =>
-  //       fromMoveCalls.add(ensure0xCoinType(t))
-  //     );
-  //   }
-  // });
-
-  return {
-    fromEvents: Array.from(fromEvents),
-    fromBalanceChanges: Array.from(fromBalanceChanges),
-    // fromObjectChanges: Array.from(fromObjectChanges),
-    // fromMoveCalls: Array.from(fromMoveCalls),
-  };
+  return Array.from(allCoinTypes);
 }
 
 export function handleDecimalConversion(
