@@ -33,21 +33,21 @@ const components: Partial<Components> = {
   },
   h3: ({ node, children, ...props }) => {
     return (
-      <h3 className="text-lg font-bold" {...props}>
+      <h3 className="text-lg font-bold mt-4" {...props}>
         {children}
       </h3>
     );
   },
   h4: ({ node, children, ...props }) => {
     return (
-      <h4 className="text-base font-bold" {...props}>
+      <h4 className="text-base font-bold mt-4" {...props}>
         {children}
       </h4>
     );
   },
   h5: ({ node, children, ...props }) => {
     return (
-      <h5 className="text-sm font-bold" {...props}>
+      <h5 className="text-sm font-bold mt-4" {...props}>
         {children}
       </h5>
     );

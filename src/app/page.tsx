@@ -9,6 +9,7 @@ import { getCoinMetadata } from "@/lib/sui/getCoinMetadata";
 import { CoinMetadata } from "@mysten/sui/client";
 import { TxnMetadataMap, TxnMetadataItem } from "@/lib/types";
 import { SuiTransactionBlockResponse } from "@mysten/sui/client";
+import Image from "next/image";
 
 export default function Home() {
   const [digest, setDigest] = useState("");
@@ -66,10 +67,10 @@ export default function Home() {
       const coins = [];
       for (const coinType of coinTypes) {
         await sleep(200); // Wait 200ms before next fetch
-        console.log("fetching coin metadata for ---", coinType);
         let coinTypeToFetch = coinType.includes("::sui::SUI")
           ? "0x2::sui::SUI"
           : coinType;
+        console.log("fetching coin metadata for ---", coinTypeToFetch);
         const coinRes = await fetch(
           `/api/get-coin-metadata?coinType=${encodeURIComponent(
             coinTypeToFetch
@@ -93,6 +94,7 @@ export default function Home() {
       console.log("fetched txn metadata");
 
       const annotatedWithMeta = { ...annotatedTxn, txnMetadataData };
+      console.log("annotated with meta", annotatedWithMeta);
       const enrichedText = JSON.stringify(annotatedWithMeta, null, 2);
       // return;
       // Update UI
@@ -100,6 +102,7 @@ export default function Home() {
       setTranslateStage("summarizing");
       // 2) Send to model for explanation (streaming)
       setExplanation("");
+      console.log("summarizing txn...");
       const explainRes = await fetch(`/api/explain`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -161,9 +164,18 @@ export default function Home() {
       <div className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-16">
         <div className="w-full rounded-3xl border border-black/5 bg-white/70 p-8 shadow-[0_10px_50px_-15px_rgba(0,0,0,0.1)] backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/60">
           <div className="mb-8 text-center">
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl">
-              Sui View
-            </h1>
+            <div className="flex flex-row gap-3 items-center justify-center">
+              <Image
+                src={"/sui-vision-logo.png"}
+                alt="sui-vision-logo"
+                width={100}
+                height={100}
+                className="w-20"
+              />
+              <h1 className="mt-2 text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl">
+                Sui View
+              </h1>
+            </div>
             <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-zinc-600 dark:text-zinc-400">
               Paste a transaction digest to preview what happened. No wallet
               needed.
@@ -200,7 +212,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={loadingTranslate}
-                className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {translateStage === "fetching"
                   ? "Fetching txn..."
@@ -211,7 +223,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={handleReset}
-                className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/30 dark:border-white/15 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-800/80"
+                className="inline-flex items-center justify-center rounded-xl border border-black/10 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/30 dark:border-white/15 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-800/80 cursor-pointer"
               >
                 Reset
               </button>

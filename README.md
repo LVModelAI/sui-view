@@ -1,36 +1,125 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Sui View — Transaction Translator
 
-## Getting Started
+Human-readable explanations for Sui blockchain transactions. Paste a transaction digest and get a clear, Markdown-formatted summary of what happened, which tokens were involved, object changes, and gas usage.
 
-First, run the development server:
+### Architecture
+
+- **Framework**: Next.js App Router (Next 16, React 19)
+- **Frontend**: `src/app/page.tsx`
+  - Accepts a Sui transaction digest or URL
+  - Fetches raw transaction + metadata, enriches with coin info, sends to explain endpoint
+  - Renders Markdown via `src/components/markdown.tsx`
+- **APIs** (`src/app/api/*`):
+  - `GET /api/raw-transaction?digest=` → Proxies Blockberry raw transaction
+  - `GET /api/get-coin-metadata?coinType=` → Proxies Blockberry coin metadata
+  - `GET /api/get-txn-metadata?digest=` → Proxies Blockberry txn metadata
+  - `POST /api/explain` → Calls OpenAI with enriched JSON + in-repo Sui guide context
+- **Enrichment**: `src/lib/utils.ts`
+  - Extracts coin types from events/balance changes
+  - Annotates balance/object changes, events, and gas with human-friendly values
+- **Model Context**: `src/lib/sui-context.ts`
+  - Curated Sui transaction analysis guide included with the prompt
+
+Data flow
+
+1. User enters digest → 2) Fetch raw txn from Blockberry → 3) Extract coin types → 4) Fetch coin metadata → 5) Annotate txn → 6) Fetch txn metadata → 7) POST to `/api/explain` with enriched JSON → 8) Render Markdown explanation.
+
+### Data Sources
+
+- **Blockberry Sui API**: Primary on-chain data (raw transactions, transaction metadata, coin metadata)
+  - Base: `https://api.blockberry.one/sui/v1`
+  - Key: `BLOCKBERRY_API_KEY`
+- **OpenAI**: Natural language generation for explanations
+  - Env: `OPENAI_API_KEY`, model: `gpt-4o`
+- **@mysten/sui**: Types and helpers; fullnode client is available but not required for current flow
+
+### Setup
+
+Requirements
+
+- Node.js 18.18+ (Next.js 16 requirement)
+
+Environment
+Create `.env.local` in the project root:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+OPENAI_API_KEY=sk-...
+BLOCKBERRY_API_KEY=bbk_...
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Install and run
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+# open http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Build and start
 
-## Learn More
+```bash
+npm run build
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Usage (UI)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Open the app and paste a Sui transaction digest (or URL). 2) Click Translate. 3) Read the generated summary under “Explanation”.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Usage (API)
 
-## Deploy on Vercel
+Raw transaction
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+curl "http://localhost:3000/api/raw-transaction?digest=YOUR_TX_DIGEST" \
+  -H "accept: application/json"
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Transaction metadata
+
+```bash
+curl "http://localhost:3000/api/get-txn-metadata?digest=YOUR_TX_DIGEST" \
+  -H "accept: application/json"
+```
+
+Coin metadata
+
+```bash
+curl "http://localhost:3000/api/get-coin-metadata?coinType=0x2::sui::SUI" \
+  -H "accept: application/json"
+```
+
+Explain (server-generated summary)
+
+```bash
+curl -X POST "http://localhost:3000/api/explain" \
+  -H "content-type: application/json" \
+  -d '{
+    "digest": "YOUR_TX_DIGEST",
+    "rawText": "<stringified enriched JSON from the UI flow>"
+  }'
+```
+
+Notes
+
+- The UI orchestrates enrichment then calls `/api/explain` with the enriched JSON. If calling the API directly, you should supply comparable enriched data.
+
+### Key Files
+
+- `src/app/page.tsx`: Main UI and client-side orchestration
+- `src/app/api/raw-transaction/route.ts`: Raw txn proxy (Blockberry)
+- `src/app/api/get-coin-metadata/route.ts`: Coin metadata proxy (Blockberry)
+- `src/app/api/get-txn-metadata/route.ts`: Txn metadata proxy (Blockberry)
+- `src/app/api/explain/route.ts`: OpenAI explanation endpoint
+- `src/lib/utils.ts`: Annotation helpers (coins, events, gas)
+- `src/lib/sui-context.ts`: Built-in Sui analysis guide for prompt grounding
+
+### Caveats
+
+- Requires valid `BLOCKBERRY_API_KEY` and `OPENAI_API_KEY` to function
+- Blockberry and OpenAI rate limits apply
+- No wallet/private keys are used; this app only reads public chain data and generates summaries
+
+### License
+
+MIT

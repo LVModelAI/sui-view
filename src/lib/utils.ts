@@ -1,3 +1,4 @@
+import { MIST_PER_SUI } from "@/lib/constants";
 import { SuiGasUsedData } from "@/lib/types";
 import {
   SuiObjectChange,
@@ -5,8 +6,6 @@ import {
   SuiTransactionBlock,
   SuiTransactionBlockResponse,
 } from "@mysten/sui/client";
-
-const MIST_PER_SUI = 1e9;
 
 function ensure0xCoinType(value: string): string {
   const trimmed = value.trim();
@@ -22,6 +21,21 @@ function ensure0xCoinType(value: string): string {
 
 export function toSui(mist: string): string {
   return (Number(mist) / MIST_PER_SUI).toFixed(6);
+}
+
+function calculateTotalGasFee(gas: SuiGasUsedData) {
+  const {
+    computationCost,
+    storageCost,
+    storageRebate,
+    nonRefundableStorageFee,
+  } = gas;
+  const totalGas =
+    BigInt(computationCost) +
+    BigInt(storageCost) -
+    BigInt(storageRebate) +
+    BigInt(nonRefundableStorageFee);
+  return toSui(totalGas.toString());
 }
 
 // // Helper: Convert and label gas usage in both MIST and SUI
@@ -233,9 +247,10 @@ export function annotateGasUsed(gasUsed: SuiGasUsedData) {
   const withUnits = Object.entries(gasUsed).reduce((acc, [key, val]) => {
     const num = Number(val);
     acc[`${key}InMist`] = `${num} MIST`;
-    acc[`${key}InSui`] = `${(num / 1e9).toString()} SUI`;
+    acc[`${key}InSui`] = `${toSui(num.toString())} SUI`;
     return acc;
   }, {} as Record<string, string>);
+  const totalGasFeeInSui = calculateTotalGasFee(gasUsed);
 
   return { ...gasUsed, ...withUnits };
 }
