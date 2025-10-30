@@ -84,7 +84,7 @@ function extractCoinTypesFromEvents(events: any[] = []): Set<string> {
 
 export function extractAllCoinTypes(txn: SuiTransactionBlockResponse): {
   fromEvents: string[];
-  // fromBalanceChanges: string[];
+  fromBalanceChanges: string[];
   // fromObjectChanges: string[];
   // fromMoveCalls: string[];
 } {
@@ -96,7 +96,7 @@ export function extractAllCoinTypes(txn: SuiTransactionBlockResponse): {
   ) {
     return {
       fromEvents: [],
-      // fromBalanceChanges: [],
+      fromBalanceChanges: [],
       // fromObjectChanges: [],
       // fromMoveCalls: [],
     };
@@ -106,11 +106,11 @@ export function extractAllCoinTypes(txn: SuiTransactionBlockResponse): {
   const fromEvents = new Set<string>();
   extractCoinTypesFromEvents(txn.events).forEach((t) => fromEvents.add(t));
 
-  // // 2️⃣ From balanceChanges
-  // const fromBalanceChanges = new Set<string>();
-  // txn.balanceChanges?.forEach((bc) => {
-  //   if (bc.coinType) fromBalanceChanges.add(ensure0xCoinType(bc.coinType));
-  // });
+  // 2️⃣ From balanceChanges
+  const fromBalanceChanges = new Set<string>();
+  txn.balanceChanges?.forEach((bc) => {
+    if (bc.coinType) fromBalanceChanges.add(ensure0xCoinType(bc.coinType));
+  });
 
   // // 3️⃣ From objectChanges
   // const fromObjectChanges = new Set<string>();
@@ -142,7 +142,7 @@ export function extractAllCoinTypes(txn: SuiTransactionBlockResponse): {
 
   return {
     fromEvents: Array.from(fromEvents),
-    // fromBalanceChanges: Array.from(fromBalanceChanges),
+    fromBalanceChanges: Array.from(fromBalanceChanges),
     // fromObjectChanges: Array.from(fromObjectChanges),
     // fromMoveCalls: Array.from(fromMoveCalls),
   };

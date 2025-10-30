@@ -61,19 +61,20 @@ export default function Home() {
         `/api/raw-transaction?digest=${encodeURIComponent(trimmed)}`
       );
       const data: SuiTransactionResponse = await rawRes.json();
-      // console.log("data", data);
+      console.log("data", data);
       const txBlock = data.result;
-      // console.log("txBlock", txBlock);
+      console.log("txBlock", txBlock);
       const coinTypes = extractAllCoinTypes(
         txBlock as unknown as SuiTransactionBlockResponse
       );
-      // console.log("coinTypes", coinTypes);
-      // const coinsFromBalance = coinTypes.fromBalanceChanges;
-      // console.log("coinsFromBalance", coinsFromBalance);
+      console.log("coinTypes", coinTypes);
+      const coinsFromBalance = coinTypes.fromBalanceChanges;
       const coinsFromEvents = coinTypes.fromEvents;
-      // console.log("coinsFromEvents", coinsFromEvents);
+
+      const mergedCoins = [...coinsFromEvents, ...coinsFromBalance];
+      console.log("mergedCoins", mergedCoins);
       const coins = [];
-      for (const coinType of coinsFromEvents) {
+      for (const coinType of mergedCoins) {
         await sleep(200); // Wait 200ms before next fetch
         let coinTypeToFetch = coinType.includes("::sui::SUI")
           ? "0x2::sui::SUI"
@@ -84,7 +85,7 @@ export default function Home() {
           )}`
         );
         const coin: CoinMetadata = await coinRes.json();
-        // console.log("coin", coin);
+        console.log("coin", coin);
         coins.push({
           ...coin,
           coinType,
@@ -94,10 +95,10 @@ export default function Home() {
 
       // add coinsFromBalance to coinMetadata
 
-      // console.log("coinMetadata", coins);
+      console.log("coinMetadata", coins);
 
       const annotatedTxn = annotateTxnBlocks(txBlock, coins);
-      // console.log("annotatedTxn", annotatedTxn);
+      console.log("annotatedTxn", annotatedTxn);
 
       // Build txn metadata map (coins only for now)
       const txnMetadataRes = await fetch(
@@ -105,12 +106,13 @@ export default function Home() {
       );
       const txnMetadataData: SuiTransactionResponse =
         await txnMetadataRes.json();
-      // console.log("txnMetadataData", txnMetadataData);
+      console.log("txnMetadataData", txnMetadataData);
 
       const annotatedWithMeta = { ...annotatedTxn, txnMetadataData };
       console.log("annotatedWithMeta", annotatedWithMeta);
       const enrichedText = JSON.stringify(annotatedWithMeta, null, 2);
 
+      return;
       // Update UI
       setRawText(enrichedText);
       setTranslateStage("summarizing");
