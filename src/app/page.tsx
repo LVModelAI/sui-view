@@ -145,7 +145,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-zinc-100 dark:from-black dark:via-black dark:to-zinc-900">
-      <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center px-6 py-16">
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-16">
         <div className="w-full rounded-3xl border border-black/5 bg-white/70 p-8 shadow-[0_10px_50px_-15px_rgba(0,0,0,0.1)] backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/60">
           <div className="mb-8 text-center">
             <h1 className="mt-2 text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl">

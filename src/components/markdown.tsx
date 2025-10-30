@@ -4,6 +4,17 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import { Streamdown } from "streamdown";
 import remarkGfm from "remark-gfm";
 
+function shortenAddresses(markdown: string): string {
+  // Shorten long hex addresses like 0x1234...abcd
+  // Matches 0x followed by >=10 hex chars to avoid tiny literals like 0x2
+  const addrRe = /\b0x[0-9a-fA-F]{10,}\b/g;
+  return markdown.replace(addrRe, (addr) => {
+    const head = addr.slice(0, 6); // 0x + 4 hex
+    const tail = addr.slice(-4);
+    return `${head}...${tail}`;
+  });
+}
+
 const components: Partial<Components> = {
   h1: ({ node, children, ...props }) => {
     return (
@@ -89,13 +100,14 @@ const components: Partial<Components> = {
 const remarkPlugins = [remarkGfm];
 
 const NonMemoizedMarkdown = ({ children }: { children: string }) => {
+  const shortened = shortenAddresses(children);
   return (
     <Streamdown
       remarkPlugins={remarkPlugins}
       components={components}
       className="w-full "
     >
-      {children}
+      {shortened}
     </Streamdown>
   );
 };
