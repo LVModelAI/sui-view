@@ -2,6 +2,19 @@
 
 import { useState } from "react";
 import { Markdown } from "@/components/markdown";
+import {
+  SuiGasData,
+  SuiGasUsedFormattedData,
+  SuiTransactionResponse,
+  SuiTransactionResult,
+} from "@/lib/types";
+import {
+  annotateTxnBlocks,
+  enrichGasUsage,
+  extractAllCoinTypes,
+} from "@/lib/utils";
+import { getTxBlock } from "@/lib/sui/getTxBlock";
+import { getCoinMetadata } from "@/lib/sui/getCoinMetadata";
 
 export default function Home() {
   const [digest, setDigest] = useState("");
@@ -43,28 +56,41 @@ export default function Home() {
     setLoadingTranslate(true);
     setTranslateStage("fetching");
     try {
-      // 1) Fetch raw transaction data
-      const rawRes = await fetch(
-        `/api/raw-transaction?digest=${encodeURIComponent(trimmed)}`
+      const txBlock = await getTxBlock(trimmed);
+      console.log("txBlock", txBlock);
+      const coinTypes = extractAllCoinTypes(txBlock);
+      // console.log("coinTypes", coinTypes);
+      const coinsFromBalance = coinTypes.fromBalanceChanges;
+      // console.log("coinsFromBalance", coinsFromBalance);
+      const coinsFromEvents = coinTypes.fromEvents;
+      console.log("coinsFromEvents", coinsFromEvents);
+      const coinMetadata = await Promise.all(
+        coinsFromBalance.map(async (coinType: string) => {
+          const coin = await getCoinMetadata(coinType);
+          return {
+            ...coin,
+            coinType: coinType,
+          };
+        })
       );
-      const data = await rawRes.json();
-      const text = JSON.stringify(data.result);
-      console.log("rawRes", text);
-      if (!rawRes.ok || !data?.result) {
-        console.error("Raw fetch error:", text);
-        setError("Failed to fetch transaction data.");
-        setRawText("");
-        setExplanation("");
-        return;
-      }
-      setRawText(text);
+
+      // add coinsFromBalance to coinMetadata
+
+      console.log("coinMetadata", coinMetadata);
+
+      const annotatedTxn = annotateTxnBlocks(txBlock, coinMetadata);
+      console.log("annotatedTxn", annotatedTxn);
+
+      const enrichedText = JSON.stringify(annotatedTxn, null, 2);
+      // Update UI
+      setRawText(enrichedText);
       setTranslateStage("summarizing");
       // 2) Send to model for explanation (streaming)
       setExplanation("");
       const explainRes = await fetch(`/api/explain`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ digest: trimmed, rawText: text }),
+        body: JSON.stringify({ digest: trimmed, rawText: enrichedText }),
       });
 
       // If server didn't stream, fall back to JSON handling
@@ -111,7 +137,7 @@ export default function Home() {
   }
 
   function handleReset() {
-    setDigest("");
+    // setDigest("");
     setError("");
     setRawText("");
     setExplanation("");
