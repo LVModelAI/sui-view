@@ -95,6 +95,19 @@ const components: Partial<Components> = {
       </ul>
     );
   },
+  a: ({ node, children, ...props }) => {
+    return (
+      // @ts-expect-error
+      <Link
+        className="text-blue-500 hover:underline"
+        target="_blank"
+        rel="noreferrer"
+        {...props}
+      >
+        {children}
+      </Link>
+    );
+  },
 };
 
 const remarkPlugins = [remarkGfm];

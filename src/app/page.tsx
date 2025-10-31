@@ -15,7 +15,6 @@ export default function Home() {
   const [digest, setDigest] = useState("");
   const [error, setError] = useState<string>("");
   const [loadingTranslate, setLoadingTranslate] = useState(false);
-  const [rawText, setRawText] = useState("");
   const [explanation, setExplanation] = useState("");
   const [translateStage, setTranslateStage] = useState<
     "idle" | "fetching" | "summarizing"
@@ -65,6 +64,7 @@ export default function Home() {
       );
 
       const coins = [];
+      // fetch the metadata for all the coin types with a delay of 200ms between each fetch to avoid rate limiting
       for (const coinType of coinTypes) {
         await sleep(200); // Wait 200ms before next fetch
         let coinTypeToFetch = coinType.includes("::sui::SUI")
@@ -83,8 +83,10 @@ export default function Home() {
         });
       }
 
+      // annotate the transaction blocks with the coin metadata and handle decimal conversion for human readable format
       const annotatedTxn = annotateTxnBlocks(txBlock, coins);
 
+      // fetch the transaction metadata like sender name, protocol name and url, etc, for the transaction digest to add more context to the explanation
       console.log("fetching txn metadata...");
       const txnMetadataRes = await fetch(
         `/api/get-txn-metadata?digest=${encodeURIComponent(trimmed)}`
@@ -93,15 +95,17 @@ export default function Home() {
         await txnMetadataRes.json();
       console.log("fetched txn metadata");
 
+      // add the transaction metadata to the annotated transaction blocks
       const annotatedWithMeta = { ...annotatedTxn, txnMetadataData };
       console.log("annotated with meta", annotatedWithMeta);
       const enrichedText = JSON.stringify(annotatedWithMeta, null, 2);
-      // return;
+
       // Update UI
-      setRawText(enrichedText);
       setTranslateStage("summarizing");
       // 2) Send to model for explanation (streaming)
       setExplanation("");
+
+      // send the enriched text to the model for explanation
       console.log("summarizing txn...");
       const explainRes = await fetch(`/api/explain`, {
         method: "POST",
@@ -109,43 +113,19 @@ export default function Home() {
         body: JSON.stringify({ digest: trimmed, rawText: enrichedText }),
       });
 
-      // If server didn't stream, fall back to JSON handling
-      const contentType = explainRes.headers.get("content-type") || "";
-      if (contentType.includes("application/json")) {
-        const data = await explainRes.json();
-        if (!explainRes.ok) {
-          console.error("Explain error:", data);
-          setError("Failed to generate explanation. Try again.");
-          setExplanation("");
-          return;
-        }
-        setExplanation(data.explanation || "");
-        return;
-      }
-
       if (!explainRes.ok) {
         const errText = await explainRes.text();
-        console.error("Explain error (stream resp):", errText);
+        console.error("Explain error:", errText);
         setError("Failed to generate explanation. Try again.");
-        setExplanation("");
         return;
       }
 
-      const reader = explainRes.body?.getReader();
-      if (!reader) {
-        // No body to read, bail out
-        const fallback = await explainRes.text();
-        setExplanation(fallback);
-        return;
-      }
-
-      const decoder = new TextDecoder();
-      while (true) {
-        const { done, value } = await reader!.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        if (chunk) setExplanation((prev) => prev + chunk);
-      }
+      const explainData = await explainRes.json();
+      console.log("explanation", explainData.explanation);
+      setExplanation(explainData?.explanation || "");
+    } catch (error) {
+      console.error(error);
+      setError("An error occurred while translating the transaction.");
     } finally {
       setLoadingTranslate(false);
       setTranslateStage("idle");
@@ -155,7 +135,6 @@ export default function Home() {
   function handleReset() {
     // setDigest("");
     setError("");
-    setRawText("");
     setExplanation("");
   }
 
