@@ -174,7 +174,7 @@ export default function Home() {
                   if (error) setError("");
                 }}
                 placeholder="Enter a transaction digest or transaction URL"
-                className="w-full rounded-2xl border border-black/10 bg-white/80 py-4 px-4 text-[15px] text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-emerald-500 focus:bg-white focus:shadow-md dark:border-white/15 dark:bg-zinc-800/70 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:text-zinc-900"
+                className="w-full rounded-2xl border border-black/10 bg-white/80 py-4 px-4 text-[15px] text-zinc-900 shadow-sm outline-none ring-0 transition focus:border-theme-blue-500 focus:bg-white focus:shadow-md dark:border-white/15 dark:bg-zinc-800/70 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:text-zinc-900"
                 autoComplete="off"
                 spellCheck={false}
                 inputMode="text"
@@ -191,7 +191,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={loadingTranslate}
-                className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="inline-flex items-center justify-center rounded-xl bg-theme-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-theme-blue-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-blue-600/40 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {translateStage === "fetching"
                   ? "Fetching txn..."
