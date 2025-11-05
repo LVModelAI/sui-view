@@ -10,9 +10,9 @@ Human-readable explanations for Sui blockchain transactions. Paste a transaction
   - Fetches raw transaction + metadata, enriches with coin info, sends to explain endpoint
   - Renders Markdown via `src/components/markdown.tsx`
 - **APIs** (`src/app/api/*`):
-  - `GET /api/raw-transaction?digest=` → Proxies Blockberry raw transaction
-  - `GET /api/get-coin-metadata?coinType=` → Proxies Blockberry coin metadata
-  - `GET /api/get-txn-metadata?digest=` → Proxies Blockberry txn metadata
+  - `GET /api/raw-transaction?digest=` → Proxies Sui raw transaction
+  - `GET /api/get-coin-metadata?coinType=` → Proxies Sui coin metadata
+  - `GET /api/get-txn-metadata?digest=` → Proxies Sui txn metadata
   - `POST /api/explain` → Calls OpenAI with enriched JSON + in-repo Sui guide context
 - **Enrichment**: `src/lib/utils.ts`
   - Extracts coin types from events/balance changes
@@ -22,13 +22,12 @@ Human-readable explanations for Sui blockchain transactions. Paste a transaction
 
 Data flow
 
-1. User enters digest → 2) Fetch raw txn from Blockberry → 3) Extract coin types → 4) Fetch coin metadata → 5) Annotate txn → 6) Fetch txn metadata → 7) POST to `/api/explain` with enriched JSON → 8) Render Markdown explanation.
+1. User enters digest → 2) Fetch raw txn from Sui blockchain → 3) Extract coin types → 4) Fetch coin metadata → 5) Annotate txn → 6) Fetch txn metadata → 7) POST to `/api/explain` with enriched JSON → 8) Render Markdown explanation.
 
 ### Data Sources
 
-- **Blockberry Sui API**: Primary on-chain data (raw transactions, transaction metadata, coin metadata)
-  - Base: `https://api.blockberry.one/sui/v1`
-  - Key: `BLOCKBERRY_API_KEY`
+- **Sui Blockchain API**: Primary on-chain data (raw transactions, transaction metadata, coin metadata)
+  - Key: `SUI_API_KEY`
 - **OpenAI**: Natural language generation for explanations
   - Env: `OPENAI_API_KEY`, model: `gpt-4o`
 - **@mysten/sui**: Types and helpers; fullnode client is available but not required for current flow
@@ -44,7 +43,7 @@ Create `.env.local` in the project root:
 
 ```bash
 OPENAI_API_KEY=sk-...
-BLOCKBERRY_API_KEY=bbk_...
+SUI_API_KEY=...
 ```
 
 Install and run
@@ -107,17 +106,17 @@ Notes
 ### Key Files
 
 - `src/app/page.tsx`: Main UI and client-side orchestration
-- `src/app/api/raw-transaction/route.ts`: Raw txn proxy (Blockberry)
-- `src/app/api/get-coin-metadata/route.ts`: Coin metadata proxy (Blockberry)
-- `src/app/api/get-txn-metadata/route.ts`: Txn metadata proxy (Blockberry)
+- `src/app/api/raw-transaction/route.ts`: Raw txn proxy (Sui)
+- `src/app/api/get-coin-metadata/route.ts`: Coin metadata proxy (Sui)
+- `src/app/api/get-txn-metadata/route.ts`: Txn metadata proxy (Sui)
 - `src/app/api/explain/route.ts`: OpenAI explanation endpoint
 - `src/lib/utils.ts`: Annotation helpers (coins, events, gas)
 - `src/lib/sui-context.ts`: Built-in Sui analysis guide for prompt grounding
 
 ### Caveats
 
-- Requires valid `BLOCKBERRY_API_KEY` and `OPENAI_API_KEY` to function
-- Blockberry and OpenAI rate limits apply
+- Requires valid `SUI_API_KEY` and `OPENAI_API_KEY` to function
+- Sui Blockchain and OpenAI rate limits apply
 - No wallet/private keys are used; this app only reads public chain data and generates summaries
 
 ### License

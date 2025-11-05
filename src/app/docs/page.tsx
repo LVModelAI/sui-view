@@ -209,11 +209,11 @@ export default function DocsPage() {
           </p>
 
           <h3 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mt-8 mb-3">
-            Blockberry Sui API
+            Sui Blockchain API
           </h3>
           <p className="text-zinc-600 dark:text-zinc-400 leading-7 my-4">
-            Blockberry provides on-chain data services for the Sui blockchain.
-            Sui View uses Blockberry to:
+            Sui Blockchain provides on-chain data services for the Sui
+            blockchain. Sui View uses Sui Blockchain to:
           </p>
           <ul className="list-disc list-inside my-4 space-y-2 text-zinc-600 dark:text-zinc-400">
             <li>Fetch raw transaction data from the blockchain</li>
@@ -331,12 +331,12 @@ export default function DocsPage() {
 
           <ul className="list-disc list-inside my-4 space-y-2 text-zinc-600 dark:text-zinc-400">
             <li>
-              The service requires active API connections to Blockberry and
+              The service requires active API connections to Sui Blockchain and
               OpenAI. Service availability depends on these third-party
               providers.
             </li>
             <li>
-              Rate limits from both Blockberry and OpenAI may apply, which could
+              Rate limits from both Sui Blockchain and OpenAI may apply, which could
               affect performance during high usage periods.
             </li>
             <li>
